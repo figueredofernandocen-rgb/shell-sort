@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shell Sort — Simulador Interactivo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f4ef;
+    --color-background-tertiary: #eeece6;
+    --color-text-primary: #1a1a18;
+    --color-text-secondary: #6b6a63;
+    --color-border-tertiary: rgba(0,0,0,0.12);
+    --color-border-secondary: rgba(0,0,0,0.22);
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: system-ui, -apple-system, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #1e1e1c;
+      --color-background-secondary: #2a2a28;
+      --color-background-tertiary: #333330;
+      --color-text-primary: #e8e6de;
+      --color-text-secondary: #9c9a92;
+      --color-border-tertiary: rgba(255,255,255,0.1);
+      --color-border-secondary: rgba(255,255,255,0.2);
+    }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-background-tertiary);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .page-wrapper {
+    max-width: 740px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: var(--color-text-primary);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin-bottom: 1.5rem;
+  }
+
+  .card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  label { font-size: 13px; color: var(--color-text-secondary); }
+
+  select, input[type="text"] {
+    border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-secondary);
+    padding: 6px 10px;
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-family: var(--font-sans);
+    outline: none;
+  }
+
+  select:focus, input[type="text"]:focus {
+    box-shadow: 0 0 0 2px rgba(55,138,221,0.3);
+  }
+
+  button {
+    border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-secondary);
+    padding: 6px 14px;
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  button:hover { background: var(--color-background-secondary); }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .array-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    justify-content: center;
+    margin: 0.5rem 0;
+    flex-wrap: wrap;
+  }
+
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+  .box {
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    border-radius: var(--border-radius-md);
+    font-size: 16px; font-weight: 500;
+    color: var(--color-text-primary);
+    transition: background 0.3s, border-color 0.3s, transform 0.2s;
+  }
+
+  .box.comparing { background: #E6F1FB; border-color: #378ADD; color: #0C447C; transform: translateY(-4px); }
+  .box.swapping  { background: #FAEEDA; border-color: #EF9F27; color: #633806; transform: translateY(-6px) scale(1.08); }
+  .box.sorted    { background: #EAF3DE; border-color: #639922; color: #27500A; }
+
+  .idx { font-size: 11px; color: var(--color-text-secondary); }
+
+  .arrow-cell {
+    width: 48px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #378ADD;
+    transition: opacity 0.3s; opacity: 0;
+  }
+  .arrow-cell.visible { opacity: 1; }
+
+  .info-bar {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 0.75rem 0;
+    min-height: 42px;
+    line-height: 1.6;
+  }
+  .info-bar strong { color: var(--color-text-primary); }
+
+  .stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .stat {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    flex: 1; min-width: 100px;
+  }
+  .stat span {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    font-size: 18px;
+    display: block;
+  }
+
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 0.75rem;
+  }
+  .leg { display: flex; align-items: center; gap: 5px; }
+  .leg-box { width: 14px; height: 14px; border-radius: 3px; border: 0.5px solid; }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--color-border-tertiary);
+    border-radius: 2px;
+    margin: 8px 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #378ADD;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  #custom-input {
+    display: none;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .section-divider {
+    border: none;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    margin: 1rem 0;
+  }
+
+  .formula-note {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.75rem;
+    padding: 8px 12px;
+    border-left: 2px solid #378ADD;
+    background: #E6F1FB22;
+    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    .box.comparing { background: #0C447C; border-color: #378ADD; color: #B5D4F4; }
+    .box.swapping  { background: #633806; border-color: #EF9F27; color: #FAC775; }
+    .box.sorted    { background: #27500A; border-color: #639922; color: #C0DD97; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+  <h1>Shell Sort — Simulador Interactivo</h1>
+  <p class="subtitle">Algoritmo de ordenamiento con saltos decrecientes · Versión mejorada de inserción directa</p>
+
+  <div class="card">
+    <div class="formula-note">
+      Salto inicial: S = ⌊(n+1)/2⌋ &nbsp;·&nbsp; Nuevo salto: S = ⌊(S+1)/2⌋ &nbsp;·&nbsp; Finaliza cuando S=1 sin intercambios
+    </div>
+
+    <div class="controls">
+      <label>Arreglo:</label>
+      <select id="preset">
+        <option value="random">Aleatorio (8 elementos)</option>
+        <option value="reverse">Orden inverso</option>
+        <option value="nearly">Casi ordenado</option>
+        <option value="custom">Personalizado</option>
+      </select>
+      <button onclick="resetAll()">↺ Nuevo arreglo</button>
+      <button onclick="stepForward()" id="btn-step">Siguiente paso ▶</button>
+      <button onclick="runAll()" id="btn-run">Ejecutar todo ⚡</button>
+    </div>
+
+    <div id="custom-input" style="display:none;margin-bottom:10px;display:none;flex-wrap:wrap;gap:8px;align-items:center">
+      <label>Valores (coma): </label>
+      <input type="text" id="custom-vals" placeholder="ej: 5,3,8,1,9,2,7,4" style="width:210px">
+      <button onclick="applyCustom()">Aplicar</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat">Salto (S) <span id="stat-gap">—</span></div>
+      <div class="stat">Pasada <span id="stat-pass">—</span></div>
+      <div class="stat">Comparaciones <span id="stat-comps">0</span></div>
+      <div class="stat">Intercambios <span id="stat-swaps">0</span></div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+
+    <div id="arrow-row" class="array-row"></div>
+    <div id="array-row" class="array-row"></div>
+    <div id="idx-row" class="array-row" style="margin-top:0"></div>
+
+    <div class="info-bar" id="info-bar">Presioná <strong>Siguiente paso</strong> para comenzar la simulación.</div>
+
+    <div class="legend">
+      <div class="leg"><div class="leg-box" style="background:#E6F1FB;border-color:#378ADD"></div> Comparando</div>
+      <div class="leg"><div class="leg-box" style="background:#FAEEDA;border-color:#EF9F27"></div> Intercambiando</div>
+      <div class="leg"><div class="leg-box" style="background:#EAF3DE;border-color:#639922"></div> Ordenado</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const presets = {
+  random:  () => shuffle([1,2,3,4,5,6,7,8].map(x=>x)),
+  reverse: () => [8,7,6,5,4,3,2,1],
+  nearly:  () => [1,2,4,3,5,7,6,8],
+  custom:  null
+};
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+let arr=[], steps=[], stepIdx=0, totalComps=0, totalSwaps=0;
+
+function getGapSequence(n){
+  let gaps=[], g=Math.floor((n+1)/2);
+  while(g>=1){ gaps.push(g); if(g===1)break; g=Math.floor((g+1)/2); }
+  return gaps;
+}
+
+function buildSteps(a){
+  const steps=[], n=a.length;
+  const arr=[...a];
+  const gaps=getGapSequence(n);
+  for(let gi=0;gi<gaps.length;gi++){
+    const gap=gaps[gi];
+    let passNum=0, keepGoing=true;
+    while(keepGoing){
+      passNum++;
+      let swappedThisPass=false;
+      for(let i=0;i+gap<n;i++){
+        steps.push({type:'compare', arr:[...arr], i, j:i+gap, gap, passNum, gapIdx:gi});
+        if(arr[i]>arr[i+gap]){
+          steps.push({type:'swap', arr:[...arr], i, j:i+gap, gap, passNum, gapIdx:gi});
+          [arr[i],arr[i+gap]]=[arr[i+gap],arr[i]];
+          swappedThisPass=true;
+        } else {
+          steps.push({type:'noswap', arr:[...arr], i, j:i+gap, gap, passNum, gapIdx:gi});
+        }
+      }
+      steps.push({type:'endpass', arr:[...arr], gap, passNum, gapIdx:gi, swapped:swappedThisPass});
+      if(!swappedThisPass) keepGoing=false;
+    }
+    if(gap===1) break;
+  }
+  steps.push({type:'done', arr:[...arr]});
+  return steps;
+}
+
+function renderArray(state, highlights={}){
+  const row=document.getElementById('array-row');
+  const idxRow=document.getElementById('idx-row');
+  const arrRow=document.getElementById('arrow-row');
+  const n=state.arr.length;
+  row.innerHTML=''; idxRow.innerHTML=''; arrRow.innerHTML='';
+  for(let k=0;k<n;k++){
+    let cls='box';
+    if(highlights.comparing&&highlights.comparing.includes(k)) cls+=' comparing';
+    if(highlights.swapping&&highlights.swapping.includes(k)) cls+=' swapping';
+    if(highlights.sorted&&highlights.sorted.includes(k)) cls+=' sorted';
+    const cell=document.createElement('div');
+    cell.className='cell';
+    cell.innerHTML=`<div class="${cls}">${state.arr[k]}</div>`;
+    row.appendChild(cell);
+    const ic=document.createElement('div');
+    ic.className='cell';
+    ic.innerHTML=`<div class="idx">${k}</div>`;
+    idxRow.appendChild(ic);
+    const ac=document.createElement('div');
+    if(highlights.arrows&&highlights.arrows.includes(k)){
+      ac.className='arrow-cell visible'; ac.textContent='↕';
+    } else {
+      ac.className='arrow-cell';
+    }
+    arrRow.appendChild(ac);
+  }
+}
+
+function updateStats(step){
+  document.getElementById('stat-gap').textContent=step.gap??'—';
+  document.getElementById('stat-pass').textContent=step.passNum??'—';
+  document.getElementById('stat-comps').textContent=totalComps;
+  document.getElementById('stat-swaps').textContent=totalSwaps;
+  const prog=Math.round((stepIdx/(steps.length-1))*100);
+  document.getElementById('progress').style.width=prog+'%';
+}
+
+function applyStep(s, idx){
+  if(s.type==='compare'){
+    totalComps++;
+    renderArray(s,{comparing:[s.i,s.j],arrows:[s.i,s.j]});
+    document.getElementById('info-bar').innerHTML=
+      `<strong>Salto S=${s.gap}</strong> — Pasada ${s.passNum}: comparando posición <strong>${s.i}</strong> (valor ${s.arr[s.i]}) con posición <strong>${s.j}</strong> (valor ${s.arr[s.j]}) — separadas por ${s.gap} posición${s.gap>1?'es':''}.`;
+  } else if(s.type==='swap'){
+    totalSwaps++;
+    renderArray(s,{swapping:[s.i,s.j],arrows:[s.i,s.j]});
+    document.getElementById('info-bar').innerHTML=
+      `<strong>¡Intercambio!</strong> ${s.arr[s.i]} > ${s.arr[s.j]} → se intercambian las posiciones <strong>${s.i}</strong> y <strong>${s.j}</strong>.`;
+  } else if(s.type==='noswap'){
+    renderArray(s,{comparing:[s.i,s.j]});
+    document.getElementById('info-bar').innerHTML=
+      `Sin intercambio: ${s.arr[s.i]} ≤ ${s.arr[s.j]}, los elementos ya están en orden correcto para este salto.`;
+  } else if(s.type==='endpass'){
+    const next=steps[idx+1];
+    const newGap=next&&next.gap!==s.gap?Math.floor((s.gap+1)/2):s.gap;
+    renderArray(s,{});
+    if(s.swapped){
+      document.getElementById('info-bar').innerHTML=
+        `Fin de pasada ${s.passNum} con salto S=${s.gap}. <strong>Hubo intercambios</strong> → se repite con el mismo salto.`;
+    } else if(s.gap===1){
+      document.getElementById('info-bar').innerHTML=
+        `Pasada sin intercambios con S=1. <strong>¡Condición de finalización alcanzada!</strong>`;
+    } else {
+      document.getElementById('info-bar').innerHTML=
+        `Pasada sin intercambios. Nuevo salto: S = ⌊(${s.gap}+1)/2⌋ = <strong>${newGap}</strong>.`;
+    }
+  } else if(s.type==='done'){
+    renderArray(s,{sorted:[...Array(s.arr.length).keys()]});
+    document.getElementById('info-bar').innerHTML=
+      `<strong>¡Arreglo ordenado!</strong> Shell Sort finalizó. Total: ${totalComps} comparaciones, ${totalSwaps} intercambios.`;
+    document.getElementById('btn-step').disabled=true;
+    document.getElementById('btn-run').disabled=true;
+    document.getElementById('progress').style.width='100%';
+    return;
+  }
+  if(s.gap!==undefined) updateStats(s);
+}
+
+function stepForward(){
+  if(stepIdx>=steps.length) return;
+  applyStep(steps[stepIdx],stepIdx);
+  stepIdx++;
+}
+
+async function runAll(){
+  document.getElementById('btn-run').disabled=true;
+  document.getElementById('btn-step').disabled=true;
+  while(stepIdx<steps.length){
+    applyStep(steps[stepIdx],stepIdx);
+    stepIdx++;
+    await new Promise(r=>setTimeout(r,420));
+  }
+}
+
+function resetAll(){
+  const p=document.getElementById('preset').value;
+  totalComps=0; totalSwaps=0; stepIdx=0;
+  document.getElementById('btn-step').disabled=false;
+  document.getElementById('btn-run').disabled=false;
+  document.getElementById('stat-gap').textContent='—';
+  document.getElementById('stat-pass').textContent='—';
+  document.getElementById('stat-comps').textContent='0';
+  document.getElementById('stat-swaps').textContent='0';
+  document.getElementById('progress').style.width='0%';
+  if(p==='custom'){
+    const raw=document.getElementById('custom-vals').value;
+    arr=raw.split(',').map(x=>parseInt(x.trim())).filter(x=>!isNaN(x));
+    if(arr.length<2) arr=[5,3,8,1,9,2,7,4];
+  } else {
+    arr=presets[p]();
+  }
+  steps=buildSteps(arr);
+  renderArray({arr},{});
+  document.getElementById('info-bar').innerHTML='Presioná <strong>Siguiente paso</strong> para comenzar la simulación.';
+  document.getElementById('arrow-row').innerHTML='';
+  document.getElementById('idx-row').innerHTML=arr.map((_,i)=>`<div class="cell"><div class="idx">${i}</div></div>`).join('');
+}
+
+function applyCustom(){ resetAll(); }
+
+document.getElementById('preset').addEventListener('change',function(){
+  const ci=document.getElementById('custom-input');
+  ci.style.display=this.value==='custom'?'flex':'none';
+  resetAll();
+});
+
+resetAll();
+</script>
+</body>
+</html>
